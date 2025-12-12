@@ -4,17 +4,16 @@ import os
 from PIL import Image, ImageOps
 
 
-
 class LoadImageFromDir:
     """
     A custom node to load images from a directory.
     Iterates through all images in the folder.
     """
 
-    _current_index = 0
-
     def __init__(self):
-        pass
+        # Switched to instance variables so multiple nodes don't share the same counter
+        self._current_index = 0
+        self._last_reset_state = False
 
     @classmethod
     def INPUT_TYPES(s):
@@ -27,6 +26,7 @@ class LoadImageFromDir:
                         "default": "/path/to/directory",
                     },
                 ),
+                "reset_sequence": ("BOOLEAN", {"default": False}),
             },
         }
 
@@ -34,12 +34,20 @@ class LoadImageFromDir:
     def IS_CHANGED(s, **kwargs):
         return float("nan")
 
-    RETURN_TYPES = ("IMAGE", "MASK")
-    RETURN_NAMES = ("image", "mask")
+
+    RETURN_TYPES = ("IMAGE", "MASK", "STRING")
+    RETURN_NAMES = ("image", "mask", "filename")
     FUNCTION = "load_image"
     CATEGORY = "Custom/Image"
 
-    def load_image(self, directory):
+    def load_image(self, directory, reset_sequence):
+        # Only reset if the boolean changed from False to True (Trigger logic)
+        if reset_sequence and not self._last_reset_state:
+            self._current_index = 0
+
+        # Update last state
+        self._last_reset_state = reset_sequence
+
         if not os.path.isdir(directory):
             raise FileNotFoundError(f"Directory not found: {directory}")
 
@@ -57,10 +65,13 @@ class LoadImageFromDir:
         if not files:
             raise ValueError(f"No valid images found in directory: {directory}")
 
-        # Select file based on index
-        image_path = files[LoadImageFromDir._current_index % len(files)]
+        # Use self._current_index
+        image_path = files[self._current_index % len(files)]
 
-        LoadImageFromDir._current_index += 1
+
+        filename = os.path.basename(image_path)
+
+        self._current_index += 1
 
         # 1. Open the image using PIL
         try:
@@ -85,4 +96,5 @@ class LoadImageFromDir:
         # 5. Convert numpy array to torch tensor
         image = torch.from_numpy(image)[None,]
 
-        return (image, mask)
+
+        return (image, mask, filename)

@@ -1,7 +1,7 @@
 import torch
 import numpy as np
+import os
 from PIL import Image, ImageOps
-
 
 
 class LoadImageFromPath:
@@ -10,10 +10,10 @@ class LoadImageFromPath:
     Now supports multiple paths and iterates through them.
     """
 
-    _current_index = 0
-
     def __init__(self):
-        pass
+        # Switched to instance variables so multiple nodes don't share the same counter
+        self._current_index = 0
+        self._last_reset_state = False
 
     @classmethod
     def INPUT_TYPES(s):
@@ -26,6 +26,7 @@ class LoadImageFromPath:
                         "default": "C:\\path\\to\\image1.png\nC:\\path\\to\\image2.png",
                     },
                 ),
+                "reset_sequence": ("BOOLEAN", {"default": False}),
             },
         }
 
@@ -34,20 +35,32 @@ class LoadImageFromPath:
     def IS_CHANGED(s, **kwargs):
         return float("nan")
 
-    RETURN_TYPES = ("IMAGE", "MASK")
-    RETURN_NAMES = ("image", "mask")
+
+    RETURN_TYPES = ("IMAGE", "MASK", "STRING")
+    RETURN_NAMES = ("image", "mask", "filename")
     FUNCTION = "load_image"
     CATEGORY = "Custom/Image"
 
-    def load_image(self, file_paths):
+    def load_image(self, file_paths, reset_sequence):
+        # Only reset if the boolean changed from False to True (Trigger logic)
+        if reset_sequence and not self._last_reset_state:
+            self._current_index = 0
+
+        # Update last state
+        self._last_reset_state = reset_sequence
+
         paths = [p.strip() for p in file_paths.split("\n") if p.strip()]
 
         if not paths:
             raise ValueError("No valid file paths provided.")
 
-        image_path = paths[LoadImageFromPath._current_index % len(paths)]
+        # Use self._current_index
+        image_path = paths[self._current_index % len(paths)]
 
-        LoadImageFromPath._current_index += 1
+
+        filename = os.path.basename(image_path)
+
+        self._current_index += 1
 
         # 1. Open the image using PIL
         try:
@@ -74,4 +87,5 @@ class LoadImageFromPath:
         # 5. Convert numpy array to torch tensor (ComfyUI format: Batch, Height, Width, Channels)
         image = torch.from_numpy(image)[None,]
 
-        return (image, mask)
+
+        return (image, mask, filename)
