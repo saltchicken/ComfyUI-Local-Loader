@@ -26,6 +26,8 @@ class LoadImageFromDir:
                         "default": "/path/to/directory",
                     },
                 ),
+
+                "index": ("INT", {"default": 0, "min": 0, "step": 1}),
                 "reset_sequence": ("BOOLEAN", {"default": False}),
             },
         }
@@ -40,7 +42,8 @@ class LoadImageFromDir:
     FUNCTION = "load_image"
     CATEGORY = "Custom/Image"
 
-    def load_image(self, directory, reset_sequence):
+
+    def load_image(self, directory, index, reset_sequence):
         # Only reset if the boolean changed from False to True (Trigger logic)
         if reset_sequence and not self._last_reset_state:
             self._current_index = 0
@@ -65,8 +68,9 @@ class LoadImageFromDir:
         if not files:
             raise ValueError(f"No valid images found in directory: {directory}")
 
-        # Use self._current_index
-        image_path = files[self._current_index % len(files)]
+
+        # This allows you to start from 'index' and sequence forward from there
+        image_path = files[(self._current_index + index) % len(files)]
 
 
         filename = os.path.basename(image_path)
