@@ -15,5 +15,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "LoadImageFromPath": "Local-Loader: Image (Path Sequence)",
     "LoadImageFromDir": "Local-Loader: Image (Directory Sequence)",
     "LoadSingleImageFromPath": "Local-Loader: Single Image (Path)",
-    "LoadVideoFromOutput": "Load Video (From Output) ‼️",
+    "LoadVideoFromOutput": "Load Video (From Output)",
 }
