@@ -11,29 +11,57 @@ app.registerExtension({
             nodeType.prototype.onNodeCreated = function () {
                 onNodeCreated?.apply(this, arguments);
 
-                const refreshButton = this.addWidget("button", "Refresh List", null, () => {
-                    // When clicked, fetch the list from our Python API
-                    api.fetchApi("/my_custom_nodes/refresh_video_list")
-                        .then(response => response.json())
-                        .then(files => {
-                            // Find the 'video' dropdown widget
-                            const videoWidget = this.widgets.find(w => w.name === "video");
+                const node = this;
+
+                // ‼️ New: Function to fetch videos for a specific directory
+                const updateVideosForDirectory = async (dirName) => {
+                    try {
+                        const response = await api.fetchApi(`/my_custom_nodes/output_videos?dir=${encodeURIComponent(dirName)}`);
+                        const videos = await response.json();
+
+                        const videoWidget = node.widgets.find(w => w.name === "video");
+                        if (videoWidget) {
+                            videoWidget.options.values = videos;
                             
-                            if (videoWidget) {
-                                // Update the options
-                                videoWidget.options.values = files;
+                            if (!videos.includes(videoWidget.value)) {
+                                videoWidget.value = videos.length > 0 ? videos[0] : "";
+                            }
+                            
+                            node.setDirtyCanvas(true, true);
+                        }
+                    } catch (err) {
+                        console.error("Error fetching videos for dir:", err);
+                    }
+                };
+
+                // ‼️ New: Setup Directory Widget Callback
+                const dirWidget = this.widgets.find(w => w.name === "directory");
+                if (dirWidget) {
+                    dirWidget.callback = (value) => {
+                        updateVideosForDirectory(value);
+                    };
+                }
+
+                // ‼️ Updated: Refresh Button to handle directories + videos
+                this.addWidget("button", "Refresh List", null, () => {
+                    // Fetch Directories first
+                    api.fetchApi("/my_custom_nodes/output_video_directories")
+                        .then(response => response.json())
+                        .then(dirs => {
+                            if (dirWidget) {
+                                dirWidget.options.values = dirs;
                                 
-                                // Optional: If current value is invalid, reset it
-                                if (!files.includes(videoWidget.value)) {
-                                    videoWidget.value = files[0] || "";
+                                // Reset validation
+                                if (!dirs.includes(dirWidget.value)) {
+                                    dirWidget.value = dirs.includes("") ? "" : (dirs[0] || "");
                                 }
                                 
-                                // Force a redraw of the node to show changes
-                                this.setDirtyCanvas(true, true);
+                                // Fetch videos for the valid directory
+                                updateVideosForDirectory(dirWidget.value);
                             }
                         })
                         .catch(err => {
-                            console.error("Error fetching video list:", err);
+                            console.error("Error fetching video directories:", err);
                         });
                 });
             };
