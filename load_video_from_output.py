@@ -35,6 +35,7 @@ class LoadVideoFromOutput:
             "required": {
                 "video": (file_list,),
                 "frame_limit": ("INT", {"default": 0, "min": 0, "max": 10000, "step": 1}),
+                "force_reload": ("BOOLEAN", {"default": False}),
             },
         }
 
@@ -43,7 +44,20 @@ class LoadVideoFromOutput:
     FUNCTION = "load_video"
     CATEGORY = "My Custom Nodes/Video"
 
-    def load_video(self, video, frame_limit):
+    @classmethod
+    def IS_CHANGED(s, video, frame_limit, force_reload):
+        # Resolve full path to check modification time
+        video_path = os.path.join(folder_paths.get_output_directory(), video)
+        
+        if force_reload:
+            return float("nan")
+            
+        if not os.path.exists(video_path):
+            return float("nan")
+
+        return os.path.getmtime(video_path)
+
+    def load_video(self, video, frame_limit, force_reload):
 
         video_path = os.path.join(folder_paths.get_output_directory(), video)
         
@@ -79,5 +93,5 @@ class LoadVideoFromOutput:
         # Stack frames into batch: (Batch_Size, Height, Width, Channels)
         output_images = torch.stack(frames)
         
-        print(f"‼️ Loaded {frame_count} frames from output: {video}")
+        print(f"Loaded {frame_count} frames from output: {video}")
         return (output_images, frame_count)
