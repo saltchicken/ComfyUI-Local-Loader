@@ -48,7 +48,7 @@ def get_images_in_dir(subdir):
     except Exception:
         pass
 
-    return sorted(files)
+    return sorted(files, reverse=True)
 
 
 class LoadImageFromOutput:
