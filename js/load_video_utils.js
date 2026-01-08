@@ -13,7 +13,7 @@ app.registerExtension({
 
                 const node = this;
 
-                // ‼️ New: Function to fetch videos for a specific directory
+
                 const updateVideosForDirectory = async (dirName) => {
                     try {
                         const response = await api.fetchApi(`/my_custom_nodes/output_videos?dir=${encodeURIComponent(dirName)}`);
@@ -34,7 +34,7 @@ app.registerExtension({
                     }
                 };
 
-                // ‼️ New: Setup Directory Widget Callback
+
                 const dirWidget = this.widgets.find(w => w.name === "directory");
                 if (dirWidget) {
                     dirWidget.callback = (value) => {
@@ -42,7 +42,7 @@ app.registerExtension({
                     };
                 }
 
-                // ‼️ Updated: Refresh Button to handle directories + videos
+
                 this.addWidget("button", "Refresh List", null, () => {
                     // Fetch Directories first
                     api.fetchApi("/my_custom_nodes/output_video_directories")
