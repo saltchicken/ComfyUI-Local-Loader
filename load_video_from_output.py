@@ -73,6 +73,11 @@ class LoadVideoFromOutput:
     FUNCTION = "load_video"
     CATEGORY = "My Custom Nodes/Video"
 
+
+    @classmethod
+    def VALIDATE_INPUTS(s, directory, video, **kwargs):
+        return True
+
     @classmethod
     def IS_CHANGED(s, directory, video, frame_limit, force_reload):
 

@@ -38,6 +38,8 @@ app.registerExtension({
                 const dirWidget = this.widgets.find(w => w.name === "directory");
                 if (dirWidget) {
                     dirWidget.callback = (value) => {
+
+                        dirWidget.value = value;
                         updateVideosForDirectory(value);
                     };
                 }
